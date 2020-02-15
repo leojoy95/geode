@@ -72,7 +72,7 @@ public class ClearPRMessageTest {
   public void doLocalClearThrowsExceptionWhenBucketIsNotPrimaryAtFirstCheck() {
     when(bucketRegion.isPrimary()).thenReturn(false);
 
-    assertThatThrownBy(() -> message.doLocalClear(region))
+    assertThatThrownBy(() -> message.doLocalClear(region, 0))
         .isInstanceOf(ForceReattemptException.class)
         .hasMessageContaining(ClearPRMessage.BUCKET_NON_PRIMARY_MESSAGE);
   }
@@ -85,7 +85,7 @@ public class ClearPRMessageTest {
     when(mockLockService.lock(anyString(), anyLong(), anyLong())).thenReturn(false);
     when(bucketRegion.isPrimary()).thenReturn(true);
 
-    assertThatThrownBy(() -> message.doLocalClear(region))
+    assertThatThrownBy(() -> message.doLocalClear(region, 0))
         .isInstanceOf(ForceReattemptException.class)
         .hasMessageContaining(ClearPRMessage.BUCKET_REGION_LOCK_UNAVAILABLE_MESSAGE);
   }
@@ -99,7 +99,7 @@ public class ClearPRMessageTest {
     when(bucketRegion.isPrimary()).thenReturn(true).thenReturn(false);
     when(mockLockService.lock(any(), anyLong(), anyLong())).thenReturn(true);
 
-    assertThatThrownBy(() -> message.doLocalClear(region))
+    assertThatThrownBy(() -> message.doLocalClear(region, 0))
         .isInstanceOf(ForceReattemptException.class)
         .hasMessageContaining(ClearPRMessage.BUCKET_NON_PRIMARY_MESSAGE);
     // Confirm that we actually obtained and released the lock
@@ -118,7 +118,7 @@ public class ClearPRMessageTest {
     when(bucketRegion.isPrimary()).thenReturn(true);
     when(mockLockService.lock(any(), anyLong(), anyLong())).thenReturn(true);
 
-    assertThatThrownBy(() -> message.doLocalClear(region))
+    assertThatThrownBy(() -> message.doLocalClear(region, bucketRegion.getId()))
         .isInstanceOf(ForceReattemptException.class)
         .hasMessageContaining(ClearPRMessage.EXCEPTION_THROWN_DURING_CLEAR_OPERATION);
 
@@ -136,7 +136,7 @@ public class ClearPRMessageTest {
     // Be primary on the first check, then be not primary on the second check
     when(bucketRegion.isPrimary()).thenReturn(true);
     when(mockLockService.lock(any(), anyLong(), anyLong())).thenReturn(true);
-    assertThat(message.doLocalClear(region)).isTrue();
+    assertThat(message.doLocalClear(region, 0)).isTrue();
 
     // Confirm that cmnClearRegion was called
     verify(bucketRegion, times(1)).cmnClearRegion(any(), anyBoolean(), anyBoolean());
@@ -197,7 +197,7 @@ public class ClearPRMessageTest {
     int processorId = 1000;
     int startTime = 0;
 
-    doReturn(true).when(message).doLocalClear(region);
+    doReturn(true).when(message).doLocalClear(region, 0);
     doReturn(sender).when(message).getSender();
     doReturn(processorId).when(message).getProcessorId();
 
@@ -222,7 +222,7 @@ public class ClearPRMessageTest {
     ForceReattemptException exception =
         new ForceReattemptException(ClearPRMessage.BUCKET_NON_PRIMARY_MESSAGE);
 
-    doThrow(exception).when(message).doLocalClear(region);
+    doThrow(exception).when(message).doLocalClear(region, 0);
     doReturn(sender).when(message).getSender();
     doReturn(processorId).when(message).getProcessorId();
 
