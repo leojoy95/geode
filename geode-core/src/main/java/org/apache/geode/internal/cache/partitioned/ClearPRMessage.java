@@ -179,9 +179,15 @@ public class ClearPRMessage extends PartitionMessageWithDirectReply {
     return false;
   }
 
-  public boolean doLocalClear(PartitionedRegion region, int bucketId) throws ForceReattemptException {
+  public int getBucketId() {
+    return this.bucketId;
+  }
+
+  public boolean doLocalClear(PartitionedRegion region, int bucketId)
+      throws ForceReattemptException {
     // Retrieve local bucket region which matches target bucketId
-    BucketRegion bucketRegion = region.getDataStore().getInitializedBucketForId(null, this.bucketId);
+    BucketRegion bucketRegion =
+        region.getDataStore().getInitializedBucketForId(null, this.bucketId);
 
     // Check if we are primary, throw exception if not
     if (!bucketRegion.isPrimary()) {
